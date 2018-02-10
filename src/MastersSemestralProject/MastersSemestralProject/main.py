@@ -1,6 +1,7 @@
 import sys
 import pygame
 import math
+import os
 
 class Point2D(object):
     def __init__(self, x=0, y=0):
@@ -19,22 +20,28 @@ class CarSensor(object):
         self.length = length
 
 class Car(object):
-    def __init__(self, position: Point2D, size: Size2D, sensor: CarSensor):
+    MAX_FORWARD_SPEED = 5
+    MAX_BACKWARD_SPEED = -3
+    ROTATE_SPEED = 3
+
+    def __init__(self, position: Point2D, size: Size2D, angle: int, sensor: CarSensor):
         self.position = position
         self.size = size
-        self.direction = 0
+        self.angle = angle
         self.sensor = sensor
         self.color = (0x0, 0xBF, 0xFF)
         self.speed = 0.0
-        self.MAX_FORWARD_SPEED = 5
-        self.MAX_BACKWARD_SPEED = -3
-        self.ROTATE_SPEED = 3
+
+        img = pygame.image.load(os.path.join("img", "car.jpg"))
+        self.car = pygame.transform.scale(img, (self.size.width, self.size.height))
 
     def rotate_right(self):
-        self.direction = self.direction + self.ROTATE_SPEED
+        self.angle = self.angle + self.ROTATE_SPEED
+        print("right angle=%d", self.angle)
 
     def rotate_left(self):
-        self.direction = self.direction - self.ROTATE_SPEED
+        self.angle = self.angle - self.ROTATE_SPEED
+        print("left angle=%d", self.angle)
 
     def forward(self):
         self.speed += 0.25
@@ -65,20 +72,24 @@ class Car(object):
     def update(self):
         self.check_keys()
 
-        rad = math.radians(self.direction)
+        rad = math.radians(self.angle)
         self.position.x += self.speed * math.cos(rad)
         self.position.y += self.speed * math.sin(rad)
 
     def render(self, screen):
-        car = pygame.surface.Surface((self.size.width, self.size.height), pygame.SRCALPHA)
-        car.fill(self.color)
+        #car = pygame.surface.Surface((self.size.width, self.size.height), pygame.SRCALPHA)
+        #car = pygame.image.load(os.path.join("img", "car.jpg"))
+        #car = pygame.transform.scale(car, (self.size.width, self.size.height))
+        #car.fill(self.color)
         
-        car = pygame.transform.rotate(car, -self.direction + 90)
+        car = pygame.transform.rotate(self.car, -self.angle)
         rect = car.get_rect(center=(self.position.x - self.size.width // 2, self.position.y - self.size.height // 2))
         rect = rect.move(self.size.width // 2, self.size.height // 2)
 
         screen.blit(car, rect)
+
         
+        #screen.blit(img, rect)
         #pygame.draw.rect(screen, (255, 0, 0), rect, 1)
         
 class Scene(object):
@@ -104,7 +115,7 @@ def main(argv):
     pygame.display.set_caption("Semestral project")
 
     scene = Scene()
-    car = Car(Point2D(250, 250), Size2D(50, 100), CarSensor(5, 135, 10))
+    car = Car(Point2D(100, 100), Size2D(200, 100), 0, CarSensor(5, 135, 10))
     scene.addObject(car)
 
     quit = False
