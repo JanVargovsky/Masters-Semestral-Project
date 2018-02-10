@@ -69,18 +69,6 @@ class Car(object):
         self.position.y += self.speed * math.sin(rad)
 
     def render(self, screen):
-        #self.direction = self.direction + 1
-        #p = (self.position.x - self.size.width / 2, self.position.y -
-        #self.size.height / 2)
-        #s = (self.size.width, self.size.height)
-        #rect = pygame.rect.Rect(p, s)
-        #car = pygame.draw.rect(screen, self.color, rect, 1)
-        #pygame.draw.rect(screen, (255,255,255), rect, 1)
-        #radius = self.size.width if self.size.width > self.size.height else
-        #self.size.height
-        #pygame.draw.circle(screen, (255, 255, 255), (self.position.x,
-        #self.position.y), radius // 2, 1)
-
         car = pygame.surface.Surface((self.size.width, self.size.height), pygame.SRCALPHA)
         car.fill(self.color)
         
