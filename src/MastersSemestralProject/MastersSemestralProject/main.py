@@ -28,12 +28,13 @@ class Car(object):
         self.speed = 0.0
         self.MAX_FORWARD_SPEED = 5
         self.MAX_BACKWARD_SPEED = -3
+        self.ROTATE_SPEED = 3
 
     def rotate_right(self):
-        self.direction = self.direction + 3
+        self.direction = self.direction + self.ROTATE_SPEED
 
     def rotate_left(self):
-        self.direction = self.direction - 3
+        self.direction = self.direction - self.ROTATE_SPEED
 
     def forward(self):
         self.speed += 0.25
