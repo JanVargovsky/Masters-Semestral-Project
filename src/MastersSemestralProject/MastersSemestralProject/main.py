@@ -166,12 +166,12 @@ def main(argv):
             if event.type == pygame.QUIT:
                 quit = True
 
-        scene.render(screen)
-        pygame.display.flip()
-
         scene.update()
+        scene.render(screen)
+
+        pygame.display.flip()
         clock.tick(Settings.fps)
-        pygame.display.set_caption("Semestral project ({0:2.0f})".format(clock.get_fps()))
+        pygame.display.set_caption("Semestral project ({0:2.1f})".format(clock.get_fps()))
 
     pygame.quit()
     sys.exit()
