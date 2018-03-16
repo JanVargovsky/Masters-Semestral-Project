@@ -8,6 +8,7 @@ class PygameSettings(object):
     width = 1200
     height = 600
     fps = 60
+    disableAfterCrash = True
 
     def get_screen_size():
         return [PygameSettings.width, PygameSettings.height]
@@ -16,19 +17,28 @@ class Scene(object):
     background = (0, 0, 0)
 
     def __init__(self):
-        self.objects = []
+        self.track = None
+        self.cars = []
 
-    def addObject(self, object):
-        self.objects.append(object)
+    def setTrack(self, track):
+        self.track = track
+
+    def addCar(self, car):
+        self.cars.append(car)
 
     def render(self, screen):
         screen.fill(Scene.background)
-        for o in self.objects:
-            o.render(screen)
+        self.track.render(screen)
+        for car in self.cars:
+            car.render(screen)
 
     def update(self):
-        for o in self.objects:
-            o.update()
+        for car in self.cars:
+            car.update()
+
+    def checkCollisions(self):
+        for car in self.cars:
+            car.checkCollisions(self.track)
 
 class GameApp(object):
     def run(self):
@@ -37,8 +47,10 @@ class GameApp(object):
         pygame.display.set_caption("Semestral project")
 
         scene = Scene()
-        car = Car(Point2D(PygameSettings.width / 2, PygameSettings.height / 2), Size2D(100,50), 0, CarSensor(5, 180, 75))
-        scene.addObject(car)
+        track = RaceTrack()
+        scene.setTrack(track)
+        car = Car(Point2D(PygameSettings.width / 2, PygameSettings.height / 2), Size2D(50,25), 0, CarSensor(5, 75, 75))
+        scene.addCar(car)
 
         quit = False
         clock = pygame.time.Clock()
@@ -47,6 +59,7 @@ class GameApp(object):
                 if event.type == pygame.QUIT:
                     quit = True
 
+            scene.checkCollisions()
             scene.update()
             scene.render(screen)
 
@@ -54,7 +67,6 @@ class GameApp(object):
             clock.tick(PygameSettings.fps)
             pygame.display.set_caption("Semestral project ({0:2.1f})".format(clock.get_fps()))
         pygame.quit()
-
 
 class Point2D(object):
     def __init__(self, x=0, y=0):
@@ -76,9 +88,10 @@ class CarSensor(object):
         self.sensor = self.sensor.convert_alpha()
 
         start = (length, length)
+        offset = -90 + (180 - self.angle) / 2
         for i in range(0, self.count):
             alpha = self.angle / (self.count - 1) * i
-            rad = math.radians(alpha - 90)
+            rad = math.radians(alpha)
             end = ((int)(math.cos(rad) * length + length), (int)(math.sin(rad) * length + length))
             print("alpha={0}, pos={1}".format(alpha, end))
             pygame.draw.line(self.sensor, CarSensor.color, start, end)
@@ -90,7 +103,6 @@ class CarSensor(object):
         rect = sensor.get_rect(center=(x, y))
 
         screen.blit(sensor, rect)
-
 
 class Car(object):
     MAX_FORWARD_SPEED = 5
@@ -104,6 +116,8 @@ class Car(object):
         self.sensor = sensor
         self.color = (0x0, 0xBF, 0xFF)
         self.speed = 0.0
+        self.crash = False
+        self.rect = pygame.rect.Rect(position.x, position.y, size.width, size.height)
 
         car = pygame.image.load(os.path.join("img", "car.jpg"))
         self.car = pygame.transform.scale(car, (self.size.width, self.size.height))
@@ -142,7 +156,14 @@ class Car(object):
         if pressedKeys[pygame.K_s]:
             self.backward()
 
+    def checkCollisions(self, track):
+        if track.intersect(self.rect):
+            self.crash = True
+
     def update(self):
+        if PygameSettings.disableAfterCrash and self.crash:
+            return
+
         self.check_keys()
 
         rad = math.radians(self.angle)
@@ -172,10 +193,87 @@ class Car(object):
         rect = rect.move(self.size.width // 2, self.size.height // 2)
 
         screen.blit(car, rect)
+        self.rect = car.get_rect(center=(self.position.x, self.position.y))
 
-        rad = math.radians(self.angle)
-        sensorX = self.position.x + math.cos(rad) * self.size.width // 2
-        sensorY = self.position.y + math.sin(rad) * self.size.width // 2
-        self.sensor.render(screen, sensorX, sensorY, self.angle)
+        if not self.crash:
+            rad = math.radians(self.angle)
+            sensorX = self.position.x + math.cos(rad) * self.size.width // 2
+            sensorY = self.position.y + math.sin(rad) * self.size.width // 2
+            self.sensor.render(screen, sensorX, sensorY, self.angle)
         if debugCollisions:
             pygame.draw.rect(screen, (255, 0, 0), rect, 1)
+
+
+class RaceTrack(object):
+    COLOR = (0xFF, 0xFF, 0xFF)
+
+    def __init__(self):
+        w = 15
+        staticPoints1 = [(0, 50 - w), (100, 50 - w)]
+        staticPoints2 = [(0, 50 + w), (100, 50 + w)]
+
+        scaleX = 100. / PygameSettings.width
+        scaleY = 100. / PygameSettings.height
+        scale = lambda p: (p[0] / scaleX, p[1] / scaleY)
+        
+        self.points = [list(map(scale, staticPoints1)), list(map(scale, staticPoints2))]
+
+    def render(self, screen):
+        pygame.draw.lines(screen, self.COLOR, False, self.points[0])
+        pygame.draw.lines(screen, self.COLOR, False, self.points[1])
+
+    #https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/
+    def linePointsToEquation(self, p1, p2):
+        A = p2[1] - p1[1]
+        B = p1[0] - p2[0]
+        C = A * p1[0] + B * p1[1]
+        return (A,B,C)
+
+    def isOnLine(self, line, x,y):
+        x1 = line[0][0]
+        x2 = line[1][0]
+        y1 = line[0][1]
+        y2 = line[1][1]
+
+        rx = min(x1, x2) <= x and x <= max(x1, x2)
+        ry = min(y1, y2) <= y and y <= max(y1, y2)
+        return rx and ry
+
+    def lineIntersect(self, line1, line2, selfCall=False):
+        A1, B1, C1 = self.linePointsToEquation(line1[0], line1[1])
+        A2, B2, C2 = self.linePointsToEquation(line2[0], line2[1])
+
+        det = A1 * B2 - A2 * B1
+        if det == 0:
+            if selfCall:
+                return True
+            return self.lineIntersect((line1[0], line2[0]), (line1[1], line2[1]), True)
+        else:
+            x = (B2 * C1 - B1 * C2) / det
+            y = (A1 * C2 - A2 * C1) / det
+            l1 = self.isOnLine(line1, x,y)
+            l2 = self.isOnLine(line2, x,y)
+            return l1 and l2
+
+    def intersect(self, rect):
+        for points in self.points:
+            for i in range(1, len(points)):
+                line = (points[i - 1], points[i])
+                # top
+                line2 = (rect.topleft, rect.topright)
+                if self.lineIntersect(line, line2):
+                    return True
+                # bottom
+                line2 = (rect.bottomleft, rect.bottomright)
+                if self.lineIntersect(line, line2):
+                    return True
+                #left
+                line2 = (rect.bottomleft, rect.topleft)
+                if self.lineIntersect(line, line2):
+                    return True
+                #right
+                line2 = (rect.bottomright, rect.topright)
+                if self.lineIntersect(line, line2):
+                    return True
+                
+        return False
