@@ -1,6 +1,7 @@
 import pygame
 import math
 import os
+from RaceTrackGenerator import *
 
 debugCollisions = True
 
@@ -9,6 +10,8 @@ class PygameSettings(object):
     height = 600
     fps = 60
     disableAfterCrash = True
+    trackId = 0
+    raceWidth = 25
 
     def get_screen_size():
         return [PygameSettings.width, PygameSettings.height]
@@ -47,7 +50,8 @@ class GameApp(object):
         pygame.display.set_caption("Semestral project")
 
         scene = Scene()
-        track = RaceTrack()
+        trackGen = RaceTrackGenerator(PygameSettings.raceWidth)
+        track = RaceTrack(trackGen.getCenterTrack(PygameSettings.trackId), trackGen.getTrack(PygameSettings.trackId))
         scene.setTrack(track)
         car = Car(Point2D(PygameSettings.width / 2, PygameSettings.height / 2), Size2D(50,25), 0, CarSensor(5, 75, 75))
         scene.addCar(car)
@@ -207,18 +211,18 @@ class Car(object):
 class RaceTrack(object):
     COLOR = (0xFF, 0xFF, 0xFF)
 
-    def __init__(self):
-        w = 15
-        staticPoints1 = [(0, 50 - w), (100, 50 - w)]
-        staticPoints2 = [(0, 50 + w), (100, 50 + w)]
-
+    def __init__(self, points, track):
         scaleX = 100. / PygameSettings.width
         scaleY = 100. / PygameSettings.height
         scale = lambda p: (p[0] / scaleX, p[1] / scaleY)
+
+        self.trackCenterPoints = list(map(scale, points))
+        self.points = [list(map(scale, track[0])), list(map(scale, track[1]))]
         
-        self.points = [list(map(scale, staticPoints1)), list(map(scale, staticPoints2))]
+        #self.points = [list(map(scale, staticPoints1)), list(map(scale, staticPoints2))]
 
     def render(self, screen):
+        pygame.draw.lines(screen, (0x7F, 0xFF, 0x00), False, self.trackCenterPoints)
         pygame.draw.lines(screen, self.COLOR, False, self.points[0])
         pygame.draw.lines(screen, self.COLOR, False, self.points[1])
 
@@ -234,6 +238,9 @@ class RaceTrack(object):
         x2 = line[1][0]
         y1 = line[0][1]
         y2 = line[1][1]
+
+        X1, Y1 = line[0]
+        X2, Y2 = line[1]
 
         rx = min(x1, x2) <= x and x <= max(x1, x2)
         ry = min(y1, y2) <= y and y <= max(y1, y2)
