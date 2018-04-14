@@ -1,13 +1,21 @@
 from math import sqrt
 
 class RaceTrackGenerator(object):
+    SCALE = 100
     def __init__(self, w):
         self.w = w
 
         track1 = ((0,50), (100, 50))
         track2 = ((0, 25), (20,25), (40, 50), (50, 25), (60, 75), (100, 75))
         self.tracks = list()
+        self.starts = list()
         self.tracks.append(track1)
+        self.starts.append(track1[0])
+        self.tracks.append(track2)
+        self.starts.append(track2[0])
+
+    def getStart(self, id):
+        return self.starts[id]
 
     def getCenterTrack(self, id):
         return self.tracks[id]

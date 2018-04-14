@@ -29,9 +29,14 @@
     <Compile Include="RaceTrackGenerator.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="TensorFlowSandbox.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda36-64" />
     <InterpreterReference Include="Global|PythonCore|3.6" />
+    <InterpreterReference Include="Global|VisualStudio|ProjectEnv" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

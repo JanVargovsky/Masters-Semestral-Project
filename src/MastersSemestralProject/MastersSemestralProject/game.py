@@ -29,6 +29,9 @@ class Scene(object):
     def addCar(self, car):
         self.cars.append(car)
 
+    def clearCars(self):
+        self.cars.clear()
+
     def render(self, screen):
         screen.fill(Scene.background)
         self.track.render(screen)
@@ -44,17 +47,21 @@ class Scene(object):
             car.checkCollisions(self.track)
 
 class GameApp(object):
+    def __init__(self):
+        self.scene = Scene()
+        trackGen = RaceTrackGenerator(PygameSettings.raceWidth)
+        track = RaceTrack(trackGen.getTrack(PygameSettings.trackId), trackGen.getCenterTrack(PygameSettings.trackId))
+        start = trackGen.getStart(PygameSettings.trackId)
+        self.start = (start[0] / trackGen.SCALE * PygameSettings.width, start[1] / trackGen.SCALE * PygameSettings.height)
+        self.scene.setTrack(track)
+
     def run(self):
         pygame.init()
         screen = pygame.display.set_mode(PygameSettings.get_screen_size())
         pygame.display.set_caption("Semestral project")
 
-        scene = Scene()
-        trackGen = RaceTrackGenerator(PygameSettings.raceWidth)
-        track = RaceTrack(trackGen.getCenterTrack(PygameSettings.trackId), trackGen.getTrack(PygameSettings.trackId))
-        scene.setTrack(track)
-        car = Car(Point2D(PygameSettings.width / 2, PygameSettings.height / 2), Size2D(50,25), 0, CarSensor(5, 75, 75))
-        scene.addCar(car)
+        scene = self.scene
+        self.initCars()
 
         quit = False
         clock = pygame.time.Clock()
@@ -62,6 +69,8 @@ class GameApp(object):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     quit = True
+
+            self.check_keys()
 
             scene.checkCollisions()
             scene.update()
@@ -71,6 +80,19 @@ class GameApp(object):
             clock.tick(PygameSettings.fps)
             pygame.display.set_caption("Semestral project ({0:2.1f})".format(clock.get_fps()))
         pygame.quit()
+
+    def initCars(self):
+        self.scene.cars.clear()
+        
+        car = Car(Point2D(self.start[0], self.start[1]), Size2D(40,20), 0, CarSensor(5, 75, 75))
+        self.scene.cars.append(car)
+        carWithAI = CarWithAI(Point2D(self.start[0], self.start[1]), Size2D(40,20), 0, CarSensor(5, 75, 75))
+        self.scene.cars.append(carWithAI)
+
+    def check_keys(self):
+        pressedKeys = pygame.key.get_pressed()
+        if pressedKeys[pygame.K_r]:
+            self.initCars()
 
 class Point2D(object):
     def __init__(self, x=0, y=0):
@@ -107,6 +129,81 @@ class CarSensor(object):
         rect = sensor.get_rect(center=(x, y))
 
         screen.blit(sensor, rect)
+
+class RaceTrack(object):
+    COLOR = (0xFF, 0xFF, 0xFF)
+
+    def __init__(self, track, trackCenter):
+        scaleX = 100. / PygameSettings.width
+        scaleY = 100. / PygameSettings.height
+        scale = lambda p: (p[0] / scaleX, p[1] / scaleY)
+
+        self.track = [list(map(scale, track[0])), list(map(scale, track[1]))]
+        self.trackCenter = list(map(scale, trackCenter))
+
+    def render(self, screen):
+        pygame.draw.lines(screen, (0x7F, 0xFF, 0x00), False, self.trackCenter)
+        pygame.draw.lines(screen, self.COLOR, False, self.track[0])
+        pygame.draw.lines(screen, self.COLOR, False, self.track[1])
+
+    #https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/
+    def linePointsToEquation(self, p1, p2):
+        A = p2[1] - p1[1]
+        B = p1[0] - p2[0]
+        C = A * p1[0] + B * p1[1]
+        return (A,B,C)
+
+    def isOnLine(self, line, x,y):
+        x1 = line[0][0]
+        x2 = line[1][0]
+        y1 = line[0][1]
+        y2 = line[1][1]
+
+        X1, Y1 = line[0]
+        X2, Y2 = line[1]
+
+        rx = min(x1, x2) <= x and x <= max(x1, x2)
+        ry = min(y1, y2) <= y and y <= max(y1, y2)
+        return rx and ry
+
+    def lineIntersect(self, line1, line2, selfCall=False):
+        A1, B1, C1 = self.linePointsToEquation(line1[0], line1[1])
+        A2, B2, C2 = self.linePointsToEquation(line2[0], line2[1])
+
+        det = A1 * B2 - A2 * B1
+        if det == 0:
+            if selfCall:
+                return True
+            return self.lineIntersect((line1[0], line2[0]), (line1[1], line2[1]), True)
+        else:
+            x = (B2 * C1 - B1 * C2) / det
+            y = (A1 * C2 - A2 * C1) / det
+            l1 = self.isOnLine(line1, x,y)
+            l2 = self.isOnLine(line2, x,y)
+            return l1 and l2
+
+    def intersect(self, rect):
+        for points in self.track:
+            for i in range(1, len(points)):
+                line = (points[i - 1], points[i])
+                # top
+                line2 = (rect.topleft, rect.topright)
+                if self.lineIntersect(line, line2):
+                    return True
+                # bottom
+                line2 = (rect.bottomleft, rect.bottomright)
+                if self.lineIntersect(line, line2):
+                    return True
+                #left
+                line2 = (rect.bottomleft, rect.topleft)
+                if self.lineIntersect(line, line2):
+                    return True
+                #right
+                line2 = (rect.bottomright, rect.topright)
+                if self.lineIntersect(line, line2):
+                    return True
+                
+        return False
 
 class Car(object):
     MAX_FORWARD_SPEED = 5
@@ -207,80 +304,6 @@ class Car(object):
         if debugCollisions:
             pygame.draw.rect(screen, (255, 0, 0), rect, 1)
 
-
-class RaceTrack(object):
-    COLOR = (0xFF, 0xFF, 0xFF)
-
-    def __init__(self, points, track):
-        scaleX = 100. / PygameSettings.width
-        scaleY = 100. / PygameSettings.height
-        scale = lambda p: (p[0] / scaleX, p[1] / scaleY)
-
-        self.trackCenterPoints = list(map(scale, points))
-        self.points = [list(map(scale, track[0])), list(map(scale, track[1]))]
-        
-        #self.points = [list(map(scale, staticPoints1)), list(map(scale, staticPoints2))]
-
-    def render(self, screen):
-        pygame.draw.lines(screen, (0x7F, 0xFF, 0x00), False, self.trackCenterPoints)
-        pygame.draw.lines(screen, self.COLOR, False, self.points[0])
-        pygame.draw.lines(screen, self.COLOR, False, self.points[1])
-
-    #https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/
-    def linePointsToEquation(self, p1, p2):
-        A = p2[1] - p1[1]
-        B = p1[0] - p2[0]
-        C = A * p1[0] + B * p1[1]
-        return (A,B,C)
-
-    def isOnLine(self, line, x,y):
-        x1 = line[0][0]
-        x2 = line[1][0]
-        y1 = line[0][1]
-        y2 = line[1][1]
-
-        X1, Y1 = line[0]
-        X2, Y2 = line[1]
-
-        rx = min(x1, x2) <= x and x <= max(x1, x2)
-        ry = min(y1, y2) <= y and y <= max(y1, y2)
-        return rx and ry
-
-    def lineIntersect(self, line1, line2, selfCall=False):
-        A1, B1, C1 = self.linePointsToEquation(line1[0], line1[1])
-        A2, B2, C2 = self.linePointsToEquation(line2[0], line2[1])
-
-        det = A1 * B2 - A2 * B1
-        if det == 0:
-            if selfCall:
-                return True
-            return self.lineIntersect((line1[0], line2[0]), (line1[1], line2[1]), True)
-        else:
-            x = (B2 * C1 - B1 * C2) / det
-            y = (A1 * C2 - A2 * C1) / det
-            l1 = self.isOnLine(line1, x,y)
-            l2 = self.isOnLine(line2, x,y)
-            return l1 and l2
-
-    def intersect(self, rect):
-        for points in self.points:
-            for i in range(1, len(points)):
-                line = (points[i - 1], points[i])
-                # top
-                line2 = (rect.topleft, rect.topright)
-                if self.lineIntersect(line, line2):
-                    return True
-                # bottom
-                line2 = (rect.bottomleft, rect.bottomright)
-                if self.lineIntersect(line, line2):
-                    return True
-                #left
-                line2 = (rect.bottomleft, rect.topleft)
-                if self.lineIntersect(line, line2):
-                    return True
-                #right
-                line2 = (rect.bottomright, rect.topright)
-                if self.lineIntersect(line, line2):
-                    return True
-                
-        return False
+class CarWithAI(Car):
+    def check_keys(self):
+        pass
