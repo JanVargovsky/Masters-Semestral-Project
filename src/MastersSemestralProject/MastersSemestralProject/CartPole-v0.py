@@ -1,63 +1,93 @@
 import gym
-import tensorflow as tf
+from tensorflow import keras
 import numpy as np
 import os
 
-tf.logging.set_verbosity(tf.logging.INFO)
-
 ### https://github.com/openai/gym/wiki/CartPole-v0
 
-X_DTYPE = tf.float32
-X_DIM = 4
+def create_model(x, hidden, y):
+    model = keras.models.Sequential()
+    #model.add(keras.layers.Dense(1, input_dim=X_DIM, activation='relu', ))
+    model.add(keras.layers.Dense(x, input_dim=1))
+    for layer in hidden:
+        model.add(keras.layers.Dense(layer, activation='relu', bias_initializer = 'glorot_uniform'))
+    model.add(keras.layers.Dense(y * 2, activation='softmax'))
+    return model
 
-HIDDEN_LAYERS = [4,4,4]
+def output_to_action(x):
+    return np.argmax(x[0])
 
-Y_DTYPE = tf.int64
-Y_DIM = 1
+def set_random_weights(model):
+    shapes = list(map(lambda w: w.shape, model.get_weights()))
 
-def create_mlp():
-    x = tf.placeholder(X_DTYPE, [None, X_DIM], name='x')
+    new_weights = []
+    for shape in shapes:
+        new_weights.append(np.random.random_sample(shape) * 2 - 1)
 
-    hidden_layers = []
-    last_layer = x
-    for index, layer in enumerate(HIDDEN_LAYERS):
-        hidden_layer = tf.layers.dense(last_layer, layer, activation= tf.nn.relu, name='l-{}'.format(index))
-        last_layer = hidden_layer
-        hidden_layers.append(last_layer)
+    model.set_weights(new_weights)
 
-    y = tf.layers.dense(last_layer, Y_DIM, activation= tf.nn.relu, name='y')
+def save_model(model, score):
+    def get_unique_filepath():
+        filepath = 'CartPoleModels/CartPoleModel_{}'.format(score)
 
-    return (x, hidden_layers, y)
+        if not os.path.exists(filepath):
+            return filepath
+        
+        def get_filepath_with_id(id):
+            return '{}_{}'.format(filepath, id)
 
-def discrete_output(x):
-    return 0 if x < 0 else 1
+        i = 0
+        while os.path.exists(get_filepath_with_id(id)):
+            i += 1
+
+        return get_filepath_with_id(id)
+
+    filepath = get_unique_filepath()
+    model.save(filepath, False)
+
+def load_model(score, id=None):
+    filepath = 'CartPoleModels/CartPoleModel_{}'.format(score)
+    if id is not None:
+        filepath = '{}_{}'.format(filepath, id)
+    return keras.models.load_model(filepath)
+
+def run_episodes(model, update_weights, save_model):
+    scores = []
+    for i in range(2000):
+        observation = env.reset()
+        score = 0.0
+        for t in range(200):
+            result = model.predict(observation, 1)
+            action = output_to_action(result)
+            observation, reward, done, info = env.step(action)
+            score += reward
+            if done:
+                if score >= 15:
+                    print('Iteration={}, Score={}'.format(i, score))
+                if save_model and score >= 50:
+                    save_model(model, score)
+                if not scores or (scores and max(scores) < score):
+                    print('New best score {}'.format(score))
+                    best = model
+                scores.append(score)
+                set_random_weights(model)
+                break
+    print('Best score={}, mean={}'.format(np.max(scores), np.mean(scores)))
+    return best
 
 env = gym.make('CartPole-v0')
 print('Action space: {}'.format(env.action_space))
 print('Observation space: {}'.format(env.observation_space))
 
-(x, hidden_layers, y) = create_mlp() 
+load = False
+if load:
+    model = load_model(200.0)
+else:
+    X_DIM = 4
+    Y_DIM = 1
+    HIDDEN_LAYERS = [8,8,8]
+    model = create_model(X_DIM, HIDDEN_LAYERS, Y_DIM)
+    model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
 
-init = tf.global_variables_initializer()
-sess = tf.Session()
-
-with sess.as_default():
-    sess.run(init)
-
-    scores = []
-    for i_episode in range(20):
-        observation = env.reset()
-        score = 0
-        for t in range(200):
-            env.render()
-            #print(observation)
-            #action = env.action_space.sample()
-            input = observation.reshape(1,4)
-            result = sess.run(y, feed_dict = {x: input })
-            action = discrete_output(result[0][0])
-            observation, reward, done, info = env.step(action)
-            score += reward
-            if done:
-                print('Episode finished after {} timesteps, score={}'.format(t + 1, score))
-                scores.append(score)
-                break
+best = run_episodes(model, update_weights = False, save_model = False)
+run_episodes(best, update_weights = False, save_model = False)
