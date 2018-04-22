@@ -51,6 +51,23 @@ def load_model(score, id=None):
         filepath = '{}_{}'.format(filepath, id)
     return keras.models.load_model(filepath)
 
+def reshape_weights_for_de(weights):
+    D = sum(map(lambda w: w.size, weights))
+    result = np.empty(D)
+    i = 0
+    for w in weights:
+        result[i:i+w.size] = w.flatten()
+        i += w.size
+    return result
+
+def reshape_weights_for_keras(flatten_weights, weights):
+    result = []
+    i = 0
+    for w in weights:
+        result.append(flatten_weights[i:i+w.size].reshape(w.shape))
+        i+= w.size
+    return result
+
 def run_episodes(model, update_weights, save_model):
     scores = []
     for i in range(2000):
@@ -88,6 +105,10 @@ else:
     HIDDEN_LAYERS = [8,8,8]
     model = create_model(X_DIM, HIDDEN_LAYERS, Y_DIM)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
+
+#weights = model.get_weights()
+#de_weights = reshape_weights_for_de(weights)
+#keras_weights = reshape_weights_for_keras(de_weights, weights)
 
 best = run_episodes(model, update_weights = False, save_model = False)
 run_episodes(best, update_weights = False, save_model = False)
