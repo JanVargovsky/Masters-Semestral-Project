@@ -11,11 +11,21 @@ class DifferentialEvolution(object):
         N = len(population)
         D = len(population[0])
 
+        def get_three_random_agents(i):
+            result = set()
+            while len(result) < 3:
+                j = np.random.randint(N)
+                if i != j:
+                    result.add(j)
+            return result
+
         for _ in range(iterations):
             new_population = []
             for i, params in enumerate(population):
+                #indexes = np.random.choice([n for n in range(N) if n != i], size = 3, replace = False)
                 #indexes = random.sample(filter(lambda x: x != i, range(0, N)), 3)
-                indexes = random.sample(range(0, N), 3)
+                #indexes = random.sample(range(0, N), 3)
+                indexes = get_three_random_agents(i)
                 a,b,c = map(lambda i: population[i], indexes)
                 R = random.randrange(0, D)
 
