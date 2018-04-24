@@ -28,10 +28,10 @@
     <Compile Include="CartPole-v0.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DifferentialEvolution.py">
+    <Compile Include="differential_evolution.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DifferentialEvolutionTest.py">
+    <Compile Include="test_differential_evolution.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="game.py">
