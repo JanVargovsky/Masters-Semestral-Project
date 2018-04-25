@@ -123,6 +123,32 @@ def run_episode(model, weights):
         print("score=", score)
     return score
 
+N = 5
+seeds = list(map(lambda i: SEED + i, range(N)))
+def run_episode_n_times(model, weights):
+    model_weights = reshape_weights_for_keras(weights)
+    model.set_weights(model_weights)
+
+    scores = []
+    for seed in seeds:
+        env.seed(seed)
+        observation = env.reset()
+        score = 0.0
+        for t in range(200):
+            #env.render()
+            result = model.predict(observation.reshape(1,4), 1)
+            action = output_to_action(result)
+            observation, reward, done, info = env.step(action)
+            score += reward
+            if done:
+                scores.append(score)
+                break
+
+    score = np.mean(scores)
+    if score >= 15:
+        print("scores={}, mean={:0.1f}".format(scores, score))
+    return score
+
 def run_episodes(model):
     scores = []
     for i in range(100):
@@ -161,6 +187,12 @@ else:
 
 check_correct_model(env, model)
 weights = model.get_weights()
+NP = 50
+D = sum(map(lambda w: w.size, weights))
+IT = 25
+print("NP=", NP)
+print("D=", D)
+print("IT=", IT)
 
 #run_episodes(model, False, False)
 #de_weights = reshape_weights_for_de(weights)
@@ -171,9 +203,9 @@ weights = model.get_weights()
 #best = run_episodes(model, update_weights = False, save_model = False)
 #run_episodes(best, update_weights = False, save_model = False)
 
-de = DE(lambda params: run_episode(model, params))
-population = get_inititial_population(50)
-params = de.run(population, 50)
+de = DE(lambda params: run_episode_n_times(model, params))
+population = get_inititial_population(NP)
+params = de.run(population, IT)
 
 model.set_weights(reshape_weights_for_keras(params))
 mean = run_episodes(model)
