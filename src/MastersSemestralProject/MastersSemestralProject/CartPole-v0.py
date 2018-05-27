@@ -2,17 +2,21 @@ import gym
 from tensorflow import keras
 import numpy as np
 import os
-from differential_evolution import DifferentialEvolution as DE
+from differential_evolution import de
+from timeit import default_timer as timer
 
 ### https://github.com/openai/gym/wiki/CartPole-v0
 
 SEED = 42
-MAX_REWARD = 200
+MAX_REWARD = 1000
 
 def create_model(x, hidden, y):
     model = keras.models.Sequential()
 
-    model.add(keras.layers.Dense(x, activation='relu', input_dim=x, bias_initializer = 'glorot_uniform'))
+    #model.add(keras.layers.Dense(x, activation='relu', input_dim=x, bias_initializer = 'glorot_uniform'))
+    model.add(keras.layers.InputLayer((x,)))
+    #model.add(keras.layers.Permute((2,1), input_shape=(4,1)))
+    #model.add(keras.layers.Input((x,1)))
     for layer in hidden:
         model.add(keras.layers.Dense(layer, activation='relu', bias_initializer = 'glorot_uniform'))
     #model.add(keras.layers.Dense(y, activation='relu', bias_initializer = 'glorot_uniform'))
@@ -134,7 +138,7 @@ def run_episode_n_times(model, weights):
         env.seed(seed)
         observation = env.reset()
         score = 0.0
-        for t in range(200):
+        for t in range(MAX_REWARD):
             #env.render()
             result = model.predict(observation.reshape(1,4), 1)
             action = output_to_action(result)
@@ -149,14 +153,15 @@ def run_episode_n_times(model, weights):
         print("scores={}, mean={:0.1f}".format(scores, score))
     return score
 
-def run_episodes(model):
+def run_episodes(model, render):
     scores = []
     for i in range(100):
         #env.seed(SEED)
         observation = env.reset()
         score = 0.0
         for t in range(MAX_REWARD):
-            env.render()
+            if render:
+                env.render()
             result = model.predict(observation.reshape(1,4), 1)
             action = output_to_action(result)
             observation, reward, done, info = env.step(action)
@@ -170,18 +175,19 @@ def run_episodes(model):
     return mean
 
 env = gym.make('CartPole-v0')
+env._max_episode_steps = MAX_REWARD
 print('Action space: {}'.format(env.action_space))
 print('Observation space: {}'.format(env.observation_space))
 
 load = False
 if load:
-    model = load_model(123.58)
+    model = load_model(1000.0)
     p = run_episodes(model)
     exit()
 else:
     X_DIM = 4
     Y_DIM = 1
-    HIDDEN_LAYERS = [4,4,4]
+    HIDDEN_LAYERS = [2,2]
     model = create_model(X_DIM, HIDDEN_LAYERS, Y_DIM)
     model.compile(optimizer='sgd', loss='binary_crossentropy')
 
@@ -194,20 +200,14 @@ print("NP=", NP)
 print("D=", D)
 print("IT=", IT)
 
-#run_episodes(model, False, False)
-#de_weights = reshape_weights_for_de(weights)
-#keras_weights = reshape_weights_for_keras(de_weights, weights)
-
-#run_episodes(model, update_weights = False, save_model = False)
-
-#best = run_episodes(model, update_weights = False, save_model = False)
-#run_episodes(best, update_weights = False, save_model = False)
-
-de = DE(lambda params: run_episode_n_times(model, params))
+fitnessFunc = lambda params: run_episode_n_times(model, params)
 population = get_inititial_population(NP)
-params = de.run(population, IT)
+start = timer()
+params = de(fitnessFunc, population, IT)
+end = timer()
+print("Optimization time took {:0.1f}s".format(end - start))
 
 model.set_weights(reshape_weights_for_keras(params))
-mean = run_episodes(model)
-#if mean >= 195.0:
+mean = run_episodes(model, False)
 save_model(model, mean)
+run_episodes(model, True)
