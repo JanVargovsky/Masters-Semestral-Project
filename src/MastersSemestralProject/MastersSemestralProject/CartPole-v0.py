@@ -2,13 +2,13 @@ import gym
 from tensorflow import keras
 import numpy as np
 import os
-from differential_evolution import de
+from differential_evolution import de, de_jade_with_archive
 from timeit import default_timer as timer
 
 ### https://github.com/openai/gym/wiki/CartPole-v0
 
 SEED = 42
-MAX_REWARD = 1000
+MAX_REWARD = 5000
 
 def create_model(x, hidden, y):
     model = keras.models.Sequential()
@@ -203,7 +203,8 @@ print("IT=", IT)
 fitnessFunc = lambda params: run_episode_n_times(model, params)
 population = get_inititial_population(NP)
 start = timer()
-params = de(fitnessFunc, population, IT)
+#params = de(fitnessFunc, population, IT, 'max')
+params = de_jade_with_archive(fitnessFunc, population, IT, 'max')
 end = timer()
 print("Optimization time took {:0.1f}s".format(end - start))
 
