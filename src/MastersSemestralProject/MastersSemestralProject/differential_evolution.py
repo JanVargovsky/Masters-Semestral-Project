@@ -21,7 +21,7 @@ def _get_best_max(population):
 def _get_best_func(type):
     return _get_best_min if type == 'min' else _get_best_max
 
-def de(fitness_func, input_population, iterations, type='min'):
+def de(fitness_func, input_population, iterations, type):
     F = 0.5 # [0,2]
     CR = 0.9 # [0,1]
     N = len(input_population)
@@ -62,7 +62,7 @@ def de(fitness_func, input_population, iterations, type='min'):
         
     return get_best(population)[0]
 
-def de_jade_with_archive(fitness_func, input_population, iterations, type='min'):
+def de_jade_with_archive(fitness_func, input_population, iterations, type):
     NP = len(input_population)
     D = len(input_population[0])
     dtype = input_population[0].dtype
@@ -70,7 +70,7 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type='min')
     C = 0.8 # [0,1]
     u_CR = 0.5
     u_F = 0.5
-    A = list() # 'set' of good params, len(A) < NP
+    A = list()
 
     population = list(map(lambda params: (params, fitness_func(params)), input_population))
     append_better = _append_better_func(type)
@@ -110,13 +110,10 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type='min')
         CR = min(1, CR)
         return CR
     def get_F():
-        #F = np.random.standard_cauchy(u_F)
         while True:
-            F = cauchy.rvs(loc=u_F, scale=0.1)
-            if F >= 1:
-                F = 1
-                break
-            elif F > 0: # F is between (0;1>
+            F = cauchy.rvs(u_F, 0.1)
+            if F > 0:
+                F = min(1, F)
                 break
         return F
 
