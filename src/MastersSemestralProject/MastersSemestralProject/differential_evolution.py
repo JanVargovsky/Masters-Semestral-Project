@@ -1,5 +1,4 @@
 import numpy as np
-import random
 from collections import namedtuple
 from scipy.stats import cauchy
 
@@ -57,7 +56,7 @@ def de(fitness_func, input_population, iterations, type):
         for i, member in enumerate(population):
             indexes = get_three_random_agents(i)
             a,b,c = map(lambda i: population[i].params, indexes)
-            R = random.randrange(0, D)
+            R = np.random.randint(0, D)
 
             new_params = np.fromiter([compute_param(x,j) for j,x in enumerate(member.params)], dtype)
             new_member = PopulationMember(new_params, fitness_func(new_params))
@@ -89,7 +88,7 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
         best_fitness = get_best(population).fitness
         # get all 100 percentile from population
         all_bests = [x for x in population if x.fitness == best_fitness]
-        index = random.randrange(0, len(all_bests))
+        index = np.random.randint(len(all_bests))
         return all_bests[index].params
     def get_r1(P, i):
         while(True):
