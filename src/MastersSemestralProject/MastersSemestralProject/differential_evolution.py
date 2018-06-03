@@ -143,7 +143,7 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
             new_params = (new_params, fitness_func(new_params))
 
             if append_better(new_population, new_params, params):
-                A.append(params)
+                A.append(new_params)
                 s_CR.append(CR)
                 s_F.append(F)
 
