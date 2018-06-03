@@ -1,27 +1,30 @@
 import numpy as np
 import random
-import collections
+from collections import namedtuple
 from scipy.stats import cauchy
 
-def _append_min(population, new_params, old_params):
-    is_better = new_params[1] < old_params[1]
-    population.append(new_params if is_better else old_params)
+PopulationMember = namedtuple('PopulationMember', ['params', 'fitness'])
+
+def _append_min(population, new, old):
+    is_better = new.fitness < old.fitness
+    population.append(new if is_better else old)
     return is_better
-def _append_max(population, new_params, old_params):
-    is_better = new_params[1] > old_params[1]
-    population.append(new_params if is_better else old_params)
+def _append_max(population, new, old):
+    is_better = new.fitness > old.fitness
+    population.append(new if is_better else old)
     return is_better
 def _append_better_func(type):
     return _append_min if type == 'min' else _append_max
 
 def _get_best_min(population):
-    return min(population, key=lambda x: x[1])
+    return min(population, key=lambda x: x.fitness)
 def _get_best_max(population):
-    return max(population, key=lambda x: x[1])
+    return max(population, key=lambda x: x.fitness)
 def _get_best_func(type):
     return _get_best_min if type == 'min' else _get_best_max
 
 # TODO: make all stragegies as a separate functions that may be reusable
+# TODO: return all best results (parameters)
 
 def de(fitness_func, input_population, iterations, type):
     F = 0.5 # [0,2]
@@ -30,7 +33,7 @@ def de(fitness_func, input_population, iterations, type):
     D = len(input_population[0])
     dtype = input_population[0].dtype
 
-    population = list(map(lambda params: (params, fitness_func(params)), input_population))
+    population = list(map(lambda params: PopulationMember(params, fitness_func(params)), input_population))
     append_better = _append_better_func(type)
     get_best = _get_best_func(type)
 
@@ -51,19 +54,19 @@ def de(fitness_func, input_population, iterations, type):
     for g in range(iterations):
         print("iteration=", g)
         new_population = []
-        for i, params in enumerate(population):
+        for i, member in enumerate(population):
             indexes = get_three_random_agents(i)
-            a,b,c = map(lambda i: population[i][0], indexes)
+            a,b,c = map(lambda i: population[i].params, indexes)
             R = random.randrange(0, D)
 
-            new_params = np.fromiter([compute_param(x,j) for j,x in enumerate(params[0])], dtype)
-            new_params = (new_params, fitness_func(new_params))
+            new_params = np.fromiter([compute_param(x,j) for j,x in enumerate(member.params)], dtype)
+            new_member = PopulationMember(new_params, fitness_func(new_params))
 
-            append_better(new_population, new_params, params)
+            append_better(new_population, new_member, member)
 
         population = new_population
         
-    return get_best(population)[0]
+    return get_best(population).params
 
 def de_jade_with_archive(fitness_func, input_population, iterations, type):
     NP = len(input_population)
@@ -75,7 +78,7 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
     u_F = 0.5
     A = list()
 
-    population = list(map(lambda params: (params, fitness_func(params)), input_population))
+    population = list(map(lambda params: PopulationMember(params, fitness_func(params)), input_population))
     append_better = _append_better_func(type)
     get_best = _get_best_func(type)
 
@@ -83,22 +86,22 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
         return sum(map(lambda x: x ** p, x)) / sum(map(lambda x: x ** (p - 1), x))
         #return sum(x ** p) / sum(x ** (p - 1)) in case of np.array
     def get_random_best(population):
-        best_fitness = get_best(population)[1]
+        best_fitness = get_best(population).fitness
         # get all 100 percentile from population
-        all_bests = [x for x in population if x[1] == best_fitness]
+        all_bests = [x for x in population if x.fitness == best_fitness]
         index = random.randrange(0, len(all_bests))
-        return all_bests[index][0]
+        return all_bests[index].params
     def get_r1(P, i):
         while(True):
             index = np.random.randint(NP)
-            r1 = P[index][0]
+            r1 = P[index].params
             if not np.array_equal(r1, i):
                 break
         return r1
     def get_r2(P, A, i, r1):
         while(True):
             index = np.random.randint(NP + len(A))
-            r2 = (P[index] if index < NP else A[index - NP])[0]
+            r2 = (P[index] if index < NP else A[index - NP]).params
             if not np.array_equal(r2, i) and not np.array_equal(r2, r1):
                 break
         return r2
@@ -130,20 +133,19 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
         s_F = list()
 
         best = get_random_best(population)
-        for params in population:
+        for member in population:
             CR = get_CR()
             F = get_F()
 
-            #best = get_random_best(population)
-            r1 = get_r1(population, params[0])
-            r2 = get_r2(population, A, params[0], r1)
+            r1 = get_r1(population, member.params)
+            r2 = get_r2(population, A, member.params, r1)
             j_rand = np.random.randint(D)
 
-            new_params = np.fromiter([compute_param(x,j) for j,x in enumerate(params[0])], dtype)
-            new_params = (new_params, fitness_func(new_params))
+            new_params = np.fromiter([compute_param(x,j) for j,x in enumerate(member.params)], dtype)
+            new_member = PopulationMember(new_params, fitness_func(new_params))
 
-            if append_better(new_population, new_params, params):
-                A.append(new_params)
+            if append_better(new_population, new_member, member):
+                A.append(new_member)
                 s_CR.append(CR)
                 s_F.append(F)
 
@@ -155,4 +157,4 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
             u_F = (1 - C) * u_F + C * lehmer_mean(s_F)
 
     best = get_best(population)
-    return best[0]
+    return best.params
