@@ -21,6 +21,8 @@ def _get_best_max(population):
 def _get_best_func(type):
     return _get_best_min if type == 'min' else _get_best_max
 
+# TODO: make all stragegies as a separate functions that may be reusable
+
 def de(fitness_func, input_population, iterations, type):
     F = 0.5 # [0,2]
     CR = 0.9 # [0,1]
@@ -39,8 +41,9 @@ def de(fitness_func, input_population, iterations, type):
             if i != j:
                 result.add(j)
         return result
-
-    # DE/rand/1/exp
+    """
+    Computes param based on the 'rand/1' strategy
+    """
     def compute_param(x, j):
         r = np.random.uniform()
         return a[j] + F * (b[j] - c[j]) if r < CR or j == R else x
@@ -99,6 +102,9 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
             if not np.array_equal(r2, i) and not np.array_equal(r2, r1):
                 break
         return r2
+    """
+    Computes param based on the 'current-to-best/1' strategy
+    """
     def compute_param(x, j):
         r = np.random.random_sample()
         return x + F * (best[j] - x) + F * (r1[j] - r2[j]) \
