@@ -204,12 +204,14 @@ def de_shade(fitness_func, input_population, iterations, type):
     get_best = _get_best_func(type)
     filter_pbest = _get_filter_pbest(type)
 
-    def weighted_arithmetic_mean(x):
-        # TODO weighted
-        return np.mean(x)
-    def weighted_lehmer_mean(x, p=2):
-        # TODO weighted
-        return sum(map(lambda x: x ** p, x)) / sum(map(lambda x: x ** (p - 1), x))
+    def weighted_arithmetic_mean(x, w):
+        sum_w = sum(w)
+        return sum([(w[k] / sum_w) * x[k] for k in range(len(x))])
+    def weighted_lehmer_mean(x, w, p=2):
+        sum_w = sum(w)
+        a = sum([(w[k] / sum_w) * x[k] ** p for k in range(len(x))])
+        b = sum([(w[k] / sum_w) * x[k] ** (p - 1) for k in range(len(x))])
+        return a / b
     def get_pbest(population):
         p = np.random.uniform(p_min, 0.2) * 100
         all_bests = filter_pbest(population, p)
@@ -255,6 +257,7 @@ def de_shade(fitness_func, input_population, iterations, type):
         new_population = []
         s_CR = list()
         s_F = list()
+        s_W = list() # just memory for the delta f_k
         for member in population:
             r = np.random.randint(H)
             CR = get_CR(r)
@@ -273,13 +276,14 @@ def de_shade(fitness_func, input_population, iterations, type):
                 A.append(new_member)
                 s_CR.append(CR)
                 s_F.append(F)
+                s_W.append(new_member.fitness - member.fitness)
 
         population = new_population
         while len(A) > NP:
             del A[np.random.randint(0, len(A))]
         if s_CR and s_F:
-            M_CR[k] = weighted_arithmetic_mean(s_CR)
-            M_F[k] = weighted_lehmer_mean(s_F)
+            M_CR[k] = weighted_arithmetic_mean(s_CR, s_W)
+            M_F[k] = weighted_lehmer_mean(s_F, s_W)
             k = k + 1
             if k >= H:
                 k = 0
