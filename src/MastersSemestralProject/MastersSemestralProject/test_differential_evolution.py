@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from math import isclose
 from differential_evolution import de, de_jade_with_archive, de_shade
 
 class DifferentialEvolutionTest(unittest.TestCase):
@@ -14,11 +15,12 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        actual_params = de(fitness_func, population, 100, 'min')
-        actual_fitness = fitness_func(actual_params)
+        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        result = de(fitness_func, population, end_condition, 'min')
 
-        self.assertAlmostEqual(expected_fitness, actual_fitness, 8)
-        [self.assertAlmostEqual(exp, act, 4) for exp, act in zip(expected_params, actual_params)]
+        np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
+        np.testing.assert_array_almost_equal(result.params, expected_params, 5)
+        self.assertLessEqual(result.generations, 150)
 
     def test_de_find_max(self):
         def fitness_func(params):
@@ -31,11 +33,12 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        actual_params = de(fitness_func, population, 100, 'max')
-        actual_fitness = fitness_func(actual_params)
+        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        result = de(fitness_func, population, end_condition, 'max')
 
-        self.assertAlmostEqual(expected_fitness, actual_fitness, 8)
-        [self.assertAlmostEqual(exp, act, 4) for exp, act in zip(expected_params, actual_params)]
+        np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
+        np.testing.assert_array_almost_equal(result.params, expected_params, 5)
+        self.assertLessEqual(result.generations, 150)
 
     def test_de_jade_with_archive_find_min(self):
         def fitness_func(params):
@@ -48,11 +51,12 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        actual_params = de_jade_with_archive(fitness_func, population, 100, 'min')
-        actual_fitness = fitness_func(actual_params)
+        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        result = de_jade_with_archive(fitness_func, population, end_condition, 'min')
 
-        self.assertAlmostEqual(expected_fitness, actual_fitness, 8)
-        [self.assertAlmostEqual(exp, act, 4) for exp, act in zip(expected_params, actual_params)]
+        np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
+        np.testing.assert_array_almost_equal(result.params, expected_params, 5)
+        self.assertLessEqual(result.generations, 150)
 
     def test_de_jade_with_archive_find_max(self):
         def fitness_func(params):
@@ -65,11 +69,12 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        actual_params = de_jade_with_archive(fitness_func, population, 100, 'max')
-        actual_fitness = fitness_func(actual_params)
+        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        result = de_jade_with_archive(fitness_func, population, end_condition, 'max')
 
-        self.assertAlmostEqual(expected_fitness, actual_fitness, 8)
-        [self.assertAlmostEqual(exp, act, 4) for exp, act in zip(expected_params, actual_params)]
+        np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
+        np.testing.assert_array_almost_equal(result.params, expected_params, 5)
+        self.assertLessEqual(result.generations, 150)
 
     def test_de_shade_find_min(self):
         def fitness_func(params):
@@ -82,11 +87,12 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        actual_params = de_shade(fitness_func, population, 100, 'min')
-        actual_fitness = fitness_func(actual_params)
+        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        result = de_shade(fitness_func, population, end_condition, 'min')
 
-        self.assertAlmostEqual(expected_fitness, actual_fitness, 8)
-        [self.assertAlmostEqual(exp, act, 4) for exp, act in zip(expected_params, actual_params)]
+        np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
+        np.testing.assert_array_almost_equal(result.params, expected_params, 5)
+        self.assertLessEqual(result.generations, 150)
 
     def test_de_shade_find_max(self):
         def fitness_func(params):
@@ -99,11 +105,12 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        actual_params = de_shade(fitness_func, population, 100, 'max')
-        actual_fitness = fitness_func(actual_params)
+        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        result = de_shade(fitness_func, population, end_condition, 'max')
 
-        self.assertAlmostEqual(expected_fitness, actual_fitness, 8)
-        [self.assertAlmostEqual(exp, act, 4) for exp, act in zip(expected_params, actual_params)]
+        np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
+        np.testing.assert_array_almost_equal(result.params, expected_params, 5)
+        self.assertLessEqual(result.generations, 150)
 
 if __name__ == '__main__':
     unittest.main()

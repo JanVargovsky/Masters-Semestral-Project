@@ -3,6 +3,7 @@ from collections import namedtuple
 from scipy.stats import cauchy
 
 PopulationMember = namedtuple('PopulationMember', ['params', 'fitness'])
+Result = namedtuple('Result', ['params', 'fitness', 'generations', 'history'])
 
 def _append_min(population, new, old):
     is_better = new.fitness < old.fitness
@@ -51,9 +52,8 @@ def _get_filter_pbest(type):
 
 
 # TODO: make all stragegies as a separate functions that may be reusable
-# TODO: return all best results (parameters)
 
-def de(fitness_func, input_population, iterations, type):
+def de(fitness_func, input_population, end_condition, type):
     F = 0.5 # [0,2]
     CR = 0.9 # [0,1]
     N = len(input_population)
@@ -78,8 +78,10 @@ def de(fitness_func, input_population, iterations, type):
         r = np.random.uniform()
         return a[j] + F * (b[j] - c[j]) if r < CR or j == R else x
 
-    for g in range(iterations):
-        print("iteration=", g)
+    g = 0
+    history = []
+    while True:
+        print("Generation=", g)
         new_population = []
         for i, member in enumerate(population):
             indexes = get_three_random_agents(i)
@@ -92,10 +94,16 @@ def de(fitness_func, input_population, iterations, type):
             append_better(new_population, new_member, member)
 
         population = new_population
-        
-    return get_best(population).params
 
-def de_jade_with_archive(fitness_func, input_population, iterations, type):
+        best = get_best(population)
+        history.append(best.fitness)
+        g = g + 1
+        if(end_condition(best.fitness)):
+            break
+        
+    return Result(best.params, best.fitness, g, history)
+
+def de_jade_with_archive(fitness_func, input_population, end_condition, type):
     NP = len(input_population)
     D = len(input_population[0])
     dtype = input_population[0].dtype
@@ -153,8 +161,10 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
                 break
         return F
 
-    for g in range(iterations):
-        print("iteration=", g)
+    g = 0
+    history = []
+    while True:
+        print("Generation=", g)
         new_population = []
         s_CR = list()
         s_F = list()
@@ -183,10 +193,15 @@ def de_jade_with_archive(fitness_func, input_population, iterations, type):
             u_CR = (1 - C) * u_CR + C * np.mean(s_CR)
             u_F = (1 - C) * u_F + C * lehmer_mean(s_F)
 
-    best = get_best(population)
-    return best.params
+        best = get_best(population)
+        history.append(best.fitness)
+        g = g + 1
+        if(end_condition(best.fitness)):
+            break
 
-def de_shade(fitness_func, input_population, iterations, type):
+    return Result(best.params, best.fitness, g, history)
+
+def de_shade(fitness_func, input_population, end_condition, type):
     NP = len(input_population)
     D = len(input_population[0])
     dtype = input_population[0].dtype
@@ -252,7 +267,9 @@ def de_shade(fitness_func, input_population, iterations, type):
                 break
         return F
 
-    for g in range(iterations):
+    g = 0
+    history = []
+    while True:
         print("iteration=", g)
         new_population = []
         s_CR = list()
@@ -288,5 +305,10 @@ def de_shade(fitness_func, input_population, iterations, type):
             if k >= H:
                 k = 0
 
-    best = get_best(population)
-    return best.params
+        best = get_best(population)
+        history.append(best.fitness)
+        g = g + 1
+        if(end_condition(best.fitness)):
+            break
+
+    return Result(best.params, best.fitness, g, history)
