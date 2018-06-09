@@ -2,7 +2,7 @@ import gym
 from tensorflow import keras
 import numpy as np
 import os
-from differential_evolution import de, de_jade_with_archive
+from differential_evolution import de, de_jade_with_archive, de_shade
 from timeit import default_timer as timer
 
 ### https://github.com/openai/gym/wiki/CartPole-v0
@@ -195,20 +195,43 @@ check_correct_model(env, model)
 weights = model.get_weights()
 NP = 50
 D = sum(map(lambda w: w.size, weights))
-IT = 25
+end_condition = lambda reward: reward >= MAX_REWARD
 print("NP=", NP)
 print("D=", D)
-print("IT=", IT)
+print("MAX_REWARD=", MAX_REWARD)
 
 fitnessFunc = lambda params: run_episode_n_times(model, params)
 population = get_inititial_population(NP)
-start = timer()
+#start = timer()
 #params = de(fitnessFunc, population, IT, 'max')
-params = de_jade_with_archive(fitnessFunc, population, IT, 'max')
-end = timer()
-print("Optimization time took {:0.1f}s".format(end - start))
+#params = de_jade_with_archive(fitnessFunc, population, IT, 'max')
+#params = de_shade(fitnessFunc, population, IT, 'max')
+#end = timer()
+#print("Optimization time took {:0.1f}s".format(end - start))
 
-model.set_weights(reshape_weights_for_keras(params))
-mean = run_episodes(model, False)
-save_model(model, mean)
-run_episodes(model, True)
+start = timer()
+result_de = de(fitnessFunc, population, end_condition, 'max')
+end = timer()
+print("DE - Optimization time took {:0.1f}s".format(end - start))
+
+start = timer()
+result_jade = de_jade_with_archive(fitnessFunc, population, end_condition, 'max')
+end = timer()
+print("JADE - Optimization time took {:0.1f}s".format(end - start))
+
+start = timer()
+result_shade = de_shade(fitnessFunc, population, end_condition, 'max')
+end = timer()
+print("SHADE - Optimization time took {:0.1f}s".format(end - start))
+
+print(de_params)
+print(run_episode_n_times(model, result_de.params))
+print(jade_params)
+print(run_episode_n_times(model, result_jade.params))
+print(shade_params)
+print(run_episode_n_times(model, result_shade.params))
+
+#model.set_weights(reshape_weights_for_keras(params))
+#mean = run_episodes(model, False)
+#save_model(model, mean)
+#run_episodes(model, True)
