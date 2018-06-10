@@ -22,7 +22,13 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CarRacing-v0.py">
+    <Compile Include="agent_ai.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CartPole-v0_benchmark.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="benchmark_runner.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CartPole-v0.py">
