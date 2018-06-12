@@ -1,7 +1,7 @@
 from tensorflow import keras
 import numpy as np
 
-def create_model(x, hidden, y):
+def create_model(x, hidden, y, activation):
     model = keras.models.Sequential()
 
     #model.add(keras.layers.Dense(x, activation='relu', input_dim=x, bias_initializer = 'glorot_uniform'))
@@ -11,7 +11,8 @@ def create_model(x, hidden, y):
     for layer in hidden:
         model.add(keras.layers.Dense(layer, activation='relu', bias_initializer = 'glorot_uniform'))
     #model.add(keras.layers.Dense(y, activation='relu', bias_initializer = 'glorot_uniform'))
-    model.add(keras.layers.Dense(y * 2, activation='softmax', bias_initializer = 'glorot_uniform'))
+    #model.add(keras.layers.Dense(y, activation='softmax', bias_initializer = 'glorot_uniform'))
+    model.add(keras.layers.Dense(y, activation=activation, bias_initializer = 'glorot_uniform'))
 
     #model.add(keras.layers.Dense(x, input_dim=1, activation='relu'))
     #for layer in hidden:

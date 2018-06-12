@@ -6,7 +6,7 @@ from differential_evolution import de, de_jade_with_archive, de_shade
 
 env = gym.make('CartPole-v0')
 
-model = agent_ai.create_model(4, [2,2], 1)
+model = agent_ai.create_model(4, [2,2], 2, 'softmax')
 weights = model.get_weights()
 NP = 50
 D = sum(map(lambda w: w.size, weights))
