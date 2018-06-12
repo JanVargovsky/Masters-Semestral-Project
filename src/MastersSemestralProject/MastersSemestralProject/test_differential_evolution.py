@@ -15,7 +15,7 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        end_condition = lambda fitness, g: isclose(fitness, 0, abs_tol=1e-10) or g >= 150
         result = de(fitness_func, population, end_condition, 'min')
 
         np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
@@ -33,7 +33,7 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        end_condition = lambda fitness, g: isclose(fitness, 0, abs_tol=1e-10) or g >= 150
         result = de(fitness_func, population, end_condition, 'max')
 
         np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
@@ -51,7 +51,7 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        end_condition = lambda fitness, g: isclose(fitness, 0, abs_tol=1e-10) or g >= 150
         result = de_jade_with_archive(fitness_func, population, end_condition, 'min')
 
         np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
@@ -69,7 +69,7 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        end_condition = lambda fitness, g: isclose(fitness, 0, abs_tol=1e-10) or g >= 150
         result = de_jade_with_archive(fitness_func, population, end_condition, 'max')
 
         np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
@@ -87,7 +87,7 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        end_condition = lambda fitness, g: isclose(fitness, 0, abs_tol=1e-10) or g >= 150
         result = de_shade(fitness_func, population, end_condition, 'min')
 
         np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)
@@ -105,7 +105,7 @@ class DifferentialEvolutionTest(unittest.TestCase):
         expected_params = np.zeros(D)
         expected_fitness = 0.0
 
-        end_condition = lambda fitness: isclose(fitness, 0, abs_tol=1e-10)
+        end_condition = lambda fitness, g: isclose(fitness, 0, abs_tol=1e-10) or g >= 150
         result = de_shade(fitness_func, population, end_condition, 'max')
 
         np.testing.assert_almost_equal(result.fitness, expected_fitness, 10)

@@ -98,7 +98,7 @@ def de(fitness_func, input_population, end_condition, type):
         best = get_best(population)
         history.append(best.fitness)
         g = g + 1
-        if(end_condition(best.fitness)):
+        if(end_condition(best.fitness, g)):
             break
         
     return Result(best.params, best.fitness, g, history)
@@ -196,7 +196,7 @@ def de_jade_with_archive(fitness_func, input_population, end_condition, type):
         best = get_best(population)
         history.append(best.fitness)
         g = g + 1
-        if(end_condition(best.fitness)):
+        if(end_condition(best.fitness, g)):
             break
 
     return Result(best.params, best.fitness, g, history)
@@ -206,7 +206,7 @@ def de_shade(fitness_func, input_population, end_condition, type):
     D = len(input_population[0])
     dtype = input_population[0].dtype
 
-    p_min = 1 / NP # modifiable
+    p_min = 2 / NP # modifiable
     H = 10 # modifiable
     M_CR = [0.5] * H
     M_F = [0.5] * H
@@ -308,7 +308,7 @@ def de_shade(fitness_func, input_population, end_condition, type):
         best = get_best(population)
         history.append(best.fitness)
         g = g + 1
-        if(end_condition(best.fitness)):
+        if(end_condition(best.fitness, g)):
             break
 
     return Result(best.params, best.fitness, g, history)
