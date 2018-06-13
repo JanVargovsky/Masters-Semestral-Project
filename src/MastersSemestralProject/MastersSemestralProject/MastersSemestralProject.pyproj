@@ -22,6 +22,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Acrobot-v1_benchmark.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="agent_ai.py">
       <SubType>Code</SubType>
     </Compile>
@@ -37,6 +40,7 @@
     <Compile Include="differential_evolution.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MountainCarContinuous-v0_benchmark.py" />
     <Compile Include="test_differential_evolution.py">
       <SubType>Code</SubType>
     </Compile>
