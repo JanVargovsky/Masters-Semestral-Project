@@ -98,8 +98,8 @@ namespace ResultsParser
             {
                 var seed = seedGroup.Key;
                 var columns = seedGroup.OrderBy(t => t.reward).ToList();
-                using (var swGenerations = new StreamWriter(Path.Combine(ResultsPath, $"resuts_generations_seed={seed}")))
-                using (var swTimes = new StreamWriter(Path.Combine(ResultsPath, $"resuts_times_seed={seed}")))
+                using (var swGenerations = new StreamWriter(Path.Combine(ResultsPath, $"results_generations_seed={seed}")))
+                using (var swTimes = new StreamWriter(Path.Combine(ResultsPath, $"results_times_seed={seed}")))
                 {
                     await swGenerations.WriteLineAsync(string.Join(";", columns.Select(t => $"{t.alg}{t.reward}")));
                     await swTimes.WriteLineAsync(string.Join(";", columns.Select(t => $"{t.alg}{t.reward}")));
